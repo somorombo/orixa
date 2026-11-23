@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Orixa — Canlı Sohbet, Oyun & İzleme Platformu</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-main: #0b0e14;
+    --bg-panel: #131823;
+    --bg-card: #1a2130;
+    --bg-hover: #232c3f;
+    --accent: #6c5ce7;
+    --accent-2: #00cec9;
+    --danger: #ff4757;
+    --success: #2ed573;
+    --warning: #ffa502;
+    --text-main: #f1f2f6;
+    --text-muted: #9aa5b4;
+    --border: rgba(255,255,255,0.08);
+    --chat-bg: radial-gradient(circle at top right, #161d2e, #0b0e14);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+  body { background: var(--bg-main); color: var(--text-main); height: 100dvh; overflow: hidden; }
+  button { cursor: pointer; border: none; outline: none; transition: 0.2s; font-weight: 600; }
+  input, select, textarea { background: #0e131d; border: 1px solid var(--border); color: var(--text-main); padding: 10px 12px; border-radius: 10px; outline: none; }
+  input:focus { border-color: var(--accent); }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 99px; }
+
+  /* AUTH SCREEN */
+  #auth-screen {
+    position: fixed; inset: 0; z-index: 1000;
+    background: radial-gradient(circle at 20% 20%, #24194d 0%, #0b0e14 65%);
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .auth-box {
+    width: 100%; max-width: 430px; background: rgba(19, 24, 35, 0.92);
+    backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px; padding: 28px; box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+  }
+  .brand-header { text-align: center; margin-bottom: 22px; }
+  .brand-logo {
+    width: 58px; height: 58px; border-radius: 18px; margin: 0 auto 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 800; color: #fff; box-shadow: 0 10px 25px rgba(108,92,231,0.4);
+  }
+  .brand-header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  .brand-header p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+  .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #0e131d; padding: 5px; border-radius: 12px; margin-bottom: 16px; }
+  .auth-tab { padding: 9px; border-radius: 9px; background: transparent; color: var(--text-muted); font-size: 13px; }
+  .auth-tab.active { background: var(--accent); color: #fff; }
+
+  .auth-form { display: flex; flex-direction: column; gap: 11px; }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #5243d4); color: #fff;
+    padding: 12px; border-radius: 12px; font-size: 14px;
+  }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-google {
+    background: #fff; color: #111; padding: 11px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 14px;
+  }
+  .btn-guest {
+    background: rgba(0, 206, 201, 0.12); color: var(--accent-2);
+    border: 1px solid rgba(0, 206, 201, 0.35); padding: 11px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px;
+  }
+  .beta-badge {
+    background: var(--warning); color: #000; font-size: 10px; font-weight: 800;
+    padding: 2px 7px; border-radius: 99px; letter-spacing: 0.5px;
+  }
+  .divider { text-align: center; font-size: 12px; color: var(--text-muted); margin: 12px 0; position: relative; }
+
+  /* APP LAYOUT */
+  #app-container { display: none; height: 100dvh; grid-template-columns: 72px 270px 1fr; }
+  .nav-rail {
+    background: #080a0f; border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; padding: 14px 0; gap: 12px; z-index: 20;
+  }
+  .rail-btn {
+    width: 46px; height: 46px; border-radius: 15px; background: var(--bg-panel);
+    color: var(--text-muted); font-size: 20px; display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .rail-btn.active, .rail-btn:hover { background: var(--accent); color: #fff; border-radius: 13px; }
+  .notif-dot {
+    position: absolute; top: 6px; right: 6px; width: 9px; height: 9px;
+    background: var(--danger); border-radius: 50%; display: none;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--bg-panel); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .sidebar-header h2 { font-size: 16px; font-weight: 700; }
+  .sidebar-scroll { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .item-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 12px;
+    background: transparent; color: var(--text-main); text-align: left; width: 100%;
+  }
+  .item-row:hover, .item-row.active { background: var(--bg-hover); }
+  .avatar {
+    width: 38px; height: 38px; border-radius: 50%; object-fit: cover;
+    background: var(--accent); display: flex; align-items: center; justify-content: center;
+    font-weight: 700; flex-shrink: 0; position: relative; font-size: 14px;
+  }
+  .status-dot {
+    position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
+    border-radius: 50%; border: 2px solid var(--bg-panel); background: #636e72;
+  }
+  .status-dot.online { background: var(--success); }
+
+  .user-footer {
+    padding: 12px; background: #0e121b; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  /* MAIN STAGE */
+  .main-stage {
+    display: flex; flex-direction: column; background: var(--chat-bg);
+    background-size: cover; background-position: center; overflow: hidden; position: relative;
+  }
+  .topbar {
+    height: 62px; padding: 0 18px; background: rgba(19, 24, 35, 0.85);
+    backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .mobile-menu-btn { display: none; background: var(--bg-card); color: #fff; padding: 8px 11px; border-radius: 10px; font-size: 18px; }
+
+  /* ANNOUNCEMENT BAR */
+  .announcement-bar {
+    background: linear-gradient(90deg, rgba(108,92,231,0.22), rgba(0,206,201,0.18));
+    border-bottom: 1px solid rgba(108,92,231,0.35);
+    padding: 8px 16px; font-size: 12.5px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+
+  /* VIEWS */
+  .view-section { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .view-section.active { display: flex; }
+
+  /* CHAT MESSAGES */
+  .messages-area { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .msg-card {
+    max-width: 78%; background: rgba(26, 33, 48, 0.92); border: 1px solid var(--border);
+    padding: 10px 14px; border-radius: 16px; position: relative; align-self: flex-start;
+  }
+  .msg-card.mine {
+    align-self: flex-end; background: rgba(108, 92, 231, 0.28);
+    border-color: rgba(108, 92, 231, 0.5);
+  }
+  .msg-meta { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text-muted); margin-bottom: 4px; }
+  .msg-author { font-weight: 700; color: var(--accent-2); }
+  .reply-quote {
+    background: rgba(0,0,0,0.3); border-left: 3px solid var(--accent-2);
+    padding: 5px 8px; border-radius: 6px; font-size: 12px; color: var(--text-muted); margin-bottom: 6px;
+  }
+  .msg-text { font-size: 14px; line-height: 1.45; word-break: break-word; }
+  .msg-media { max-width: 250px; border-radius: 12px; margin-top: 6px; display: block; }
+  .msg-actions {
+    display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; align-items: center;
+  }
+  .act-chip {
+    background: rgba(255,255,255,0.06); color: var(--text-muted); font-size: 11px;
+    padding: 3px 7px; border-radius: 8px;
+  }
+  .act-chip:hover { background: rgba(255,255,255,0.16); color: #fff; }
+  .reaction-pill {
+    background: rgba(108,92,231,0.25); border: 1px solid rgba(108,92,231,0.5);
+    color: #fff; font-size: 12px; padding: 2px 8px; border-radius: 99px;
+  }
+  .read-ticks { font-size: 11px; margin-left: 6px; color: var(--text-muted); }
+  .read-ticks.seen { color: var(--accent-2); font-weight: 700; }
+
+  .typing-bar { padding: 4px 18px; font-size: 12px; color: var(--accent-2); min-height: 22px; font-style: italic; }
+  .reply-preview-bar {
+    display: none; padding: 8px 16px; background: #161d2b; border-top: 1px solid var(--border);
+    align-items: center; justify-content: space-between; font-size: 12.5px;
+  }
+
+  .chat-composer {
+    padding: 12px 16px; background: rgba(19, 24, 35, 0.95); border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .chat-composer input[type="text"] { flex: 1; }
+  .icon-btn {
+    background: var(--bg-card); color: var(--text-main); width: 40px; height: 40px;
+    border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--accent); }
+  .icon-btn.recording { background: var(--danger); animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: 0.6; } }
+
+  /* GIF POPOVER */
+  .gif-drawer {
+    display: none; position: absolute; bottom: 72px; left: 16px; width: 300px;
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 16px;
+    padding: 12px; z-index: 50; box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+  }
+  .gif-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; max-height: 200px; overflow-y: auto; }
+  .gif-grid img { width: 100%; height: 80px; object-fit: cover; border-radius: 8px; cursor: pointer; }
+
+  /* GAMES HUB */
+  .games-container { padding: 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+  .game-selector { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .game-card-btn {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px; text-align: left; color: #fff;
+  }
+  .game-card-btn.active { border-color: var(--accent-2); background: rgba(0,206,201,0.12); }
+  .game-arena {
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 18px;
+    padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 14px;
+  }
+  .xox-grid { display: grid; grid-template-columns: repeat(3, 84px); gap: 8px; }
+  .xox-cell {
+    width: 84px; height: 84px; background: var(--bg-card); border-radius: 14px;
+    font-size: 32px; font-weight: 800; color: #fff; display: flex; align-items: center; justify-content: center;
+  }
+  .bs-grid { display: grid; grid-template-columns: repeat(5, 48px); gap: 6px; }
+  .bs-cell {
+    width: 48px; height: 48px; background: var(--bg-card); border-radius: 8px;
+    color: #fff; font-size: 16px; display: flex; align-items: center; justify-content: center;
+  }
+
+  /* CANVAS WHITEBOARD */
+  .canvas-toolbar {
+    padding: 10px 16px; background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  #shared-canvas { flex: 1; background: #ffffff; cursor: crosshair; touch-action: none; width: 100%; }
+
+  /* WATCH PARTY */
+  .watch-layout { flex: 1; display: grid; grid-template-columns: 1.5fr 1fr; overflow: hidden; }
+  .video-stage { padding: 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+  .video-frame-wrap {
+    width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 16px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .watch-chat { border-left: 1px solid var(--border); display: flex; flex-direction: column; background: rgba(19,24,35,0.7); }
+
+  /* VOICE & VIDEO ROOMS */
+  .av-grid {
+    padding: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px; flex: 1; overflow-y: auto;
+  }
+  .av-tile {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 18px;
+    min-height: 190px; position: relative; overflow: hidden; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .av-tile video { width: 100%; height: 100%; object-fit: cover; }
+  .av-label {
+    position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.65);
+    padding: 4px 10px; border-radius: 8px; font-size: 12px;
+  }
+
+  /* MODAL */
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72);
+    z-index: 900; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-box {
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 20px;
+    width: 100%; max-width: 440px; padding: 22px; display: flex; flex-direction: column; gap: 12px;
+    max-height: 88dvh; overflow-y: auto;
+  }
+
+  /* MOBILE RESPONSIVE (360px - 430px & tablets) */
+  @media (max-width: 820px) {
+    #app-container { grid-template-columns: 1fr; }
+    .nav-rail {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 58px;
+      flex-direction: row; justify-content: space-around; padding: 0; border-right: none; border-top: 1px solid var(--border);
+    }
+    .sidebar {
+      position: fixed; top: 0; bottom: 58px; left: -290px; width: 275px; z-index: 60; transition: 0.25s;
+    }
+    .sidebar.open { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.7); }
+    .main-stage { height: calc(100dvh - 58px); }
+    .mobile-menu-btn { display: inline-flex; }
+    .watch-layout { grid-template-columns: 1fr; }
+    .watch-chat { height: 280px; border-left: none; border-top: 1px solid var(--border); }
+    .msg-card { max-width: 88%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== AUTH SCREEN ==================== -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="brand-header">
+      <div class="brand-logo">O</div>
+      <h1>Orixa</h1>
+      <p>Canlı Sohbet, Çok Oyunculu Oyunlar & Ortak İzleme</p>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-email-btn" onclick="switchAuthTab('email')">E-posta / Şifre</button>
+      <button class="auth-tab" id="tab-phone-btn" onclick="switchAuthTab('phone')">Telefon (SMS)</button>
+    </div>
+
+    <!-- Email Form -->
+    <div id="form-email" class="auth-form">
+      <input type="text" id="auth-name" placeholder="Kullanıcı Adın (Kayıt için)" />
+      <input type="email" id="auth-email" placeholder="E-posta adresin" />
+      <input type="password" id="auth-pass" placeholder="Şifren (en az 6 karakter)" />
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <button class="btn-primary" onclick="loginEmail()">Giriş Yap</button>
+        <button class="btn-primary" style="background:#232c3f;" onclick="registerEmail()">Kayıt Ol</button>
+      </div>
+    </div>
+
+    <!-- Phone Form -->
+    <div id="form-phone" class="auth-form" style="display:none;">
+      <input type="tel" id="auth-phone" placeholder="+90 5XX XXX XX XX" />
+      <div id="recaptcha-container"></div>
+      <button class="btn-primary" onclick="sendPhoneCode()">Doğrulama Kodu Gönder</button>
+      <input type="text" id="auth-otp" placeholder="6 Haneli SMS Kodu" />
+      <button class="btn-primary" style="background:var(--success); color:#000;" onclick="verifyPhoneCode()">Kodu Onayla & Gir</button>
+    </div>
+
+    <div class="divider">veya hızlı devam et</div>
+
+    <div style="display:flex; flex-direction:column; gap:9px;">
+      <button class="btn-google" onclick="loginGoogle()">
+        <span>G</span> Google ile Giriş Yap
+      </button>
+      <button class="btn-guest" onclick="loginGuest()">
+        <span>👤</span> Misafir Girişi <span class="beta-badge">BETA</span>
+      </button>
+    </div>
+    <p id="auth-error" style="color:var(--danger); font-size:12px; margin-top:10px; text-align:center;"></p>
+  </div>
+</div>
+
+<!-- ==================== MAIN APP ==================== -->
+<div id="app-container">
+  <!-- Navigation Rail -->
+  <nav class="nav-rail">
+    <button class="rail-btn active" title="Sohbet & DM" onclick="switchView('chat', this)">💬</button>
+    <button class="rail-btn" title="Canlı Oyunlar (5 Oyun)" onclick="switchView('games', this)">🎮</button>
+    <button class="rail-btn" title="Ortak Çizim Tahtası" onclick="switchView('canvas', this)">🎨</button>
+    <button class="rail-btn" title="Birlikte Video İzle" onclick="switchView('watch', this)">📺</button>
+    <button class="rail-btn" title="Sesli & Görüntülü Odalar" onclick="switchView('voice', this)">🎙️</button>
+    <button class="rail-btn" title="Bildirimler" onclick="openModal('notif-modal')">
+      🔔<span class="notif-dot" id="notif-dot"></span>
+    </button>
+    <button class="rail-btn" title="Ayarlar" onclick="openModal('settings-modal')">⚙️</button>
+  </nav>
+
+  <!-- Sidebar: Rooms, DMs, Friends & Leaderboard -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2>Orixa</h2>
+      <button class="act-chip" onclick="createRoomPrompt()">+ Oda</button>
+    </div>
+
+    <div class="sidebar-scroll">
+      <div style="font-size:11px; color:var(--text-muted); font-weight:700; padding:4px 8px;">SOHBET ODALARI</div>
+      <div id="rooms-list"></div>
+
+      <div style="font-size:11px; color:var(--text-muted); font-weight:700; padding:10px 8px 4px; display:flex; justify-content:space-between;">
+        <span>ARKADAŞLAR & DM</span>
+        <span style="color:var(--accent-2); cursor:pointer;" onclick="openModal('friends-modal')">+ Ekle</span>
+      </div>
+      <div id="friends-list"></div>
+
+      <div style="font-size:11px; color:var(--text-muted); font-weight:700; padding:10px 8px 4px;">🏆 SKOR TABLOSU</div>
+      <div id="leaderboard-list" style="display:flex; flex-direction:column; gap:5px;"></div>
+    </div>
+
+    <div class="user-footer">
+      <div class="avatar" id="my-avatar-box">?</div>
+      <div style="flex:1; min-width:0;">
+        <div id="my-display-name" style="font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Kullanıcı</div>
+        <div id="my-bio-preview" style="font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Orixa'da çevrimiçi</div>
+      </div>
+      <button class="act-chip" onclick="logoutUser()" title="Çıkış">🚪</button>
+    </div>
+  </aside>
+
+  <!-- Main Stage -->
+  <main class="main-stage" id="main-stage">
+    <header class="topbar">
+      <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+        <div style="min-width:0;">
+          <div id="active-title" style="font-weight:700; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"># Genel Sohbet</div>
+          <div id="active-subtitle" style="font-size:11.5px; color:var(--text-muted);">Herkese açık canlı oda</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="act-chip" onclick="editAnnouncement()">📢 Duyuru</button>
+      </div>
+    </header>
+
+    <!-- Announcement Banner -->
+    <div class="announcement-bar" id="announcement-bar">
+      <span id="announcement-text">📢 Orixa'ya hoş geldin! Oyun oynayarak puan kazan, ortak tahtada çiz ve birlikte video izle.</span>
+    </div>
+
+    <!-- 1. CHAT VIEW -->
+    <section class="view-section active" id="view-chat">
+      <div class="messages-area" id="messages-area"></div>
+      <div class="typing-bar" id="typing-bar"></div>
+
+      <div class="reply-preview-bar" id="reply-preview-bar">
+        <span id="reply-preview-text">Yanıtlanıyor...</span>
+        <button class="act-chip" onclick="cancelReply()">✕</button>
+      </div>
+
+      <!-- GIF Picker -->
+      <div class="gif-drawer" id="gif-drawer">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <strong style="font-size:13px;">GIF Seç</strong>
+          <button class="act-chip" onclick="toggleGifDrawer()">✕</button>
+        </div>
+        <div class="gif-grid" id="gif-grid"></div>
+      </div>
+
+      <div class="chat-composer">
+        <button class="icon-btn" title="GIF Gönder" onclick="toggleGifDrawer()">GIF</button>
+        <label class="icon-btn" title="Fotoğraf Gönder" style="cursor:pointer;">
+          📷 <input type="file" accept="image/*" style="display:none;" onchange="sendPhotoMessage(this)" />
+        </label>
+        <button class="icon-btn" id="voice-rec-btn" title="Sesli Mesaj Kaydet" onclick="toggleVoiceRecord()">🎤</button>
+        <input type="text" id="chat-input" placeholder="Bir mesaj yaz..." oninput="handleTyping()" onkeydown="if(event.key==='Enter') sendChatMessage()" />
+        <button class="btn-primary" onclick="sendChatMessage()">Gönder</button>
+      </div>
+    </section>
+
+    <!-- 2. GAMES VIEW (5 LIVE MULTIPLAYER GAMES) -->
+    <section class="view-section" id="view-games">
+      <div class="games-container">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div>
+            <h3>🎮 Canlı Çok Oyunculu Oyun Salonu</h3>
+            <p style="font-size:12px; color:var(--text-muted);">Tüm hamleler odadaki herkes tarafından anlık görünür! Kazanan +25 Puan alır.</p>
+          </div>
+          <button class="btn-primary" onclick="resetCurrentGame()">🔄 Oyunu Sıfırla</button>
+        </div>
+
+        <div class="game-selector">
+          <button class="game-card-btn active" onclick="selectGame('xox', this)">❌⭕ <strong>Canlı XOX</strong><br><small style="color:var(--text-muted)">3x3 Klasik Düello</small></button>
+          <button class="game-card-btn" onclick="selectGame('rps', this)">✊✋✌️ <strong>Taş Kağıt Makas</strong><br><small style="color:var(--text-muted)">Anlık Kapışma</small></button>
+          <button class="game-card-btn" onclick="selectGame('battleship', this)">🚢💥 <strong>Mini Amiral Battı</strong><br><small style="color:var(--text-muted)">5x5 Deniz Savaşı</small></button>
+          <button class="game-card-btn" onclick="selectGame('reflex', this)">⚡🎯 <strong>Hızlı Refleks</strong><br><small style="color:var(--text-muted)">İlk Tıklayan Kazanır</small></button>
+          <button class="game-card-btn" onclick="selectGame('word', this)">🔤🧠 <strong>Kelime Tahmin</strong><br><small style="color:var(--text-muted)">Canlı Harf Açma</small></button>
+        </div>
+
+        <div class="game-arena" id="game-arena"></div>
+      </div>
+    </section>
+
+    <!-- 3. SHARED CANVAS WHITEBOARD -->
+    <section class="view-section" id="view-canvas">
+      <div class="canvas-toolbar">
+        <strong>🎨 Ortak Çizim Tahtası</strong>
+        <input type="color" id="brush-color" value="#6c5ce7" style="width:42px; height:34px; padding:2px;" />
+        <select id="brush-size">
+          <option value="3">İnce Kalem</option>
+          <option value="7" selected>Orta Fırça</option>
+          <option value="14">Kalın Fırça</option>
+        </select>
+        <button class="act-chip" onclick="setEraser()">🧹 Silgi</button>
+        <button class="act-chip" style="background:var(--danger); color:#fff;" onclick="clearSharedCanvas()">🗑️ Tahtayı Temizle</button>
+      </div>
+      <canvas id="shared-canvas"></canvas>
+    </section>
+
+    <!-- 4. SYNCHRONIZED WATCH PARTY -->
+    <section class="view-section" id="view-watch">
+      <div class="watch-layout">
+        <div class="video-stage">
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <input type="text" id="watch-url-input" style="flex:1;" placeholder="YouTube video linki yapıştır..." />
+            <button class="btn-primary" onclick="loadWatchVideo()">Videoyu Aç</button>
+            <button class="btn-primary" style="background:var(--accent-2); color:#000;" onclick="syncWatchParty()">🔄 Herkesi Senkronize Et</button>
+          </div>
+          <div class="video-frame-wrap">
+            <iframe id="watch-iframe" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          </div>
+          <div id="watch-status" style="font-size:12px; color:var(--text-muted);">Durum: Video bekleniyor...</div>
+        </div>
+
+        <div class="watch-chat">
+          <div style="padding:10px 14px; border-bottom:1px solid var(--border); font-weight:700; font-size:13px;">🍿 İzleme Odası Sohbeti</div>
+          <div class="messages-area" id="watch-messages" style="padding:10px;"></div>
+          <div class="chat-composer" style="padding:8px;">
+            <input type="text" id="watch-chat-input" placeholder="Video hakkında yaz..." onkeydown="if(event.key==='Enter') sendWatchMsg()" />
+            <button class="btn-primary" onclick="sendWatchMsg()">Gönder</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. VOICE & VIDEO ROOMS -->
+    <section class="view-section" id="view-voice">
+      <div style="padding:14px 18px; border-bottom:1px solid var(--border); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <strong>🎙️ Sesli & Görüntülü Sohbet Odası</strong>
+        <button class="btn-primary" id="join-av-btn" onclick="joinAVRoom()">Odaya Katıl (Mikrofon/Kamera)</button>
+        <button class="act-chip" id="toggle-mic-btn" onclick="toggleMic()" style="display:none;">🎤 Mikrofon Açık</button>
+        <button class="act-chip" id="toggle-cam-btn" onclick="toggleCam()" style="display:none;">📹 Kamera Açık</button>
+        <button class="act-chip" id="leave-av-btn" onclick="leaveAVRoom()" style="display:none; background:var(--danger); color:#fff;">Ayrıl</button>
+      </div>
+      <div class="av-grid" id="av-grid">
+        <div class="av-tile">
+          <span style="color:var(--text-muted); font-size:13px;">Sesli veya görüntülü görüşmeye katılmak için yukarıdaki butona bas.</span>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+<!-- Settings Modal -->
+<div class="modal-backdrop" id="settings-modal">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3>⚙️ Profil & Görünüm Ayarları</h3>
+      <button class="act-chip" onclick="closeModal('settings-modal')">✕</button>
+    </div>
+    <label style="font-size:12px; color:var(--text-muted);">Görünen İsim</label>
+    <input type="text" id="set-name" placeholder="Yeni ismin" />
+
+    <label style="font-size:12px; color:var(--text-muted);">Profil Fotoğrafı Seç</label>
+    <input type="file" id="set-photo-file" accept="image/*" />
+
+    <label style="font-size:12px; color:var(--text-muted);">Hakkımda (Açıklama)</label>
+    <textarea id="set-bio" rows="2" placeholder="Kendinden bahset..."></textarea>
+
+    <label style="font-size:12px; color:var(--text-muted);">Sohbet Arka Plan Teması</label>
+    <select id="set-bg-preset">
+      <option value="radial-gradient(circle at top right, #161d2e, #0b0e14)">Varsayılan Gece</option>
+      <option value="linear-gradient(135deg, #1f1135, #090d16)">Siber Mor</option>
+      <option value="linear-gradient(135deg, #0d2b2a, #090d16)">Zümrüt Orman</option>
+      <option value="linear-gradient(135deg, #2b1414, #090d16)">Kızıl Arena</option>
+    </select>
+    <label style="font-size:12px; color:var(--text-muted);">Veya Özel Arka Plan Resmi Yükle</label>
+    <input type="file" id="set-bg-file" accept="image/*" />
+
+    <button class="btn-primary" onclick="saveProfileSettings()">Değişiklikleri Kaydet</button>
+  </div>
+</div>
+
+<!-- Friends Modal -->
+<div class="modal-backdrop" id="friends-modal">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3>👥 Arkadaş Ekle & İstekler</h3>
+      <button class="act-chip" onclick="closeModal('friends-modal')">✕</button>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <input type="text" id="friend-search-input" style="flex:1;" placeholder="Kullanıcı adı ara..." />
+      <button class="btn-primary" onclick="sendFriendRequest()">İstek Gönder</button>
+    </div>
+    <div style="font-size:12px; font-weight:700; color:var(--text-muted);">Gelen Arkadaşlık İstekleri</div>
+    <div id="friend-requests-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+  </div>
+</div>
+
+<!-- Notifications Modal -->
+<div class="modal-backdrop" id="notif-modal">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3>🔔 Bildirimler</h3>
+      <button class="act-chip" onclick="clearNotifications()">Temizle</button>
+    </div>
+    <div id="notifications-list" style="display:flex; flex-direction:column; gap:8px; font-size:13px;"></div>
+    <button class="act-chip" onclick="closeModal('notif-modal')">Kapat</button>
+  </div>
+</div>
+
+<!-- ==================== FIREBASE & APP LOGIC ==================== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+  import {
+    getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+    GoogleAuthProvider, signInWithPopup, signInAnonymously, RecaptchaVerifier,
+    signInWithPhoneNumber, signOut, updateProfile
+  } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+  import {
+    getDatabase, ref, set, push, update, remove, onValue, get, onDisconnect, serverTimestamp, runTransaction
+  } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+  import {
+    getStorage, ref as sRef, uploadBytes, getDownloadURL
+  } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB98ElVOEDkJgJoLrydbsggAfeANND-YG4",
+    authDomain: "orixa-6eb37.firebaseapp.com",
+    databaseURL: "https://orixa-6eb37-default-rtdb.firebaseio.com",
+    projectId: "orixa-6eb37",
+    storageBucket: "orixa-6eb37.firebasestorage.app",
+    messagingSenderId: "1076441402244",
+    appId: "1:1076441402244:web:f6904e1b3718f6a5566bd1",
+    measurementId: "G-E4F8KB5VRC"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+  const storage = getStorage(app);
+
+  // Global State
+  let currentUser = null;
+  let userProfile = {};
+  let currentChatPath = "rooms/genel/messages";
+  let currentChatMetaPath = "rooms/genel";
+  let isDM = false;
+  let replyContext = null;
+  let activeGame = "xox";
+  let confirmationResult = null;
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let localStream = null;
+  let peers = {};
+
+  const GIF_PRESETS = [
+    "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbW50b2Z6c2Z5d3Z0cW55eG95eGZ6c2Z5d3Z0cW55eG95eGZ6/3o7abKhOpu0NwenH3O/giphy.gif",
+    "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif",
+    "https://media.giphy.com/media/26u4cqiYI30juCOGY/giphy.gif",
+    "https://media.giphy.com/media/3o6Zt481isNVuQI1l6/giphy.gif",
+    "https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif",
+    "https://media.giphy.com/media/11sBLVxNs7v6WA/giphy.gif"
+  ];
+
+  // Populate GIFs
+  const gifGrid = document.getElementById("gif-grid");
+  GIF_PRESETS.forEach(url => {
+    const img = document.createElement("img");
+    img.src = url;
+    img.onclick = () => { sendSpecialMessage({ gif: url }); toggleGifDrawer(); };
+    gifGrid.appendChild(img);
+  });
+
+  // ==================== AUTH FUNCTIONS ====================
+  window.switchAuthTab = (tab) => {
+    document.getElementById("tab-email-btn").classList.toggle("active", tab === "email");
+    document.getElementById("tab-phone-btn").classList.toggle("active", tab === "phone");
+    document.getElementById("form-email").style.display = tab === "email" ? "flex" : "none";
+    document.getElementById("form-phone").style.display = tab === "phone" ? "flex" : "none";
+  };
+
+  window.loginEmail = async () => {
+    try {
+      const email = document.getElementById("auth-email").value.trim();
+      const pass = document.getElementById("auth-pass").value;
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (e) { document.getElementById("auth-error").innerText = e.message; }
+  };
+
+  window.registerEmail = async () => {
+    try {
+      const name = document.getElementById("auth-name").value.trim() || "OrixaOyuncusu";
+      const email = document.getElementById("auth-email").value.trim();
+      const pass = document.getElementById("auth-pass").value;
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(cred.user, { displayName: name });
+    } catch (e) { document.getElementById("auth-error").innerText = e.message; }
+  };
+
+  window.loginGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (e) { document.getElementById("auth-error").innerText = e.message; }
+  };
+
+  window.loginGuest = async () => {
+    try {
+      const cred = await signInAnonymously(auth);
+      const guestName = "Misafir_" + Math.floor(1000 + Math.random() * 9000);
+      await updateProfile(cred.user, { displayName: guestName });
+    } catch (e) { document.getElementById("auth-error").innerText = e.message; }
+  };
+
+  window.sendPhoneCode = async () => {
+    try {
+      const phone = document.getElementById("auth-phone").value.trim();
+      if (!window.recaptchaVerifier) {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
+      }
+      confirmationResult = await signInWithPhoneNumber(auth, phone, window.recaptchaVerifier);
+      alert("Doğrulama kodu telefonuna gönderildi!");
+    } catch (e) { document.getElementById("auth-error").innerText = e.message; }
+  };
+
+  window.verifyPhoneCode = async () => {
+    try {
+      const code = document.getElementById("auth-otp").value.trim();
+      await confirmationResult.confirm(code);
+    } catch (e) { document.getElementById("auth-error").innerText = e.message; }
+  };
+
+  window.logoutUser = () => signOut(auth);
+
+  // ==================== ON AUTH STATE CHANGED ====================
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      document.getElementById("auth-screen").style.display = "flex";
+      document.getElementById("app-container").style.display = "none";
+      return;
+    }
+    currentUser = user;
+    document.getElementById("auth-screen").style.display = "none";
+    document.getElementById("app-container").style.display = "grid";
+
+    const uRef = ref(db, `users/${user.uid}`);
+    const snap = await get(uRef);
+    const defaultName = user.displayName || (user.isAnonymous ? "Misafir_" + user.uid.slice(0, 4) : "Oyuncu_" + user.uid.slice(0, 4));
+    if (!snap.exists()) {
+      userProfile = {
+        uid: user.uid,
+        name: defaultName,
+        bio: "Orixa'da sohbet & oyun keyfi!",
+        photo: user.photoURL || "",
+        score: 0,
+        online: true,
+        lastSeen: Date.now()
+      };
+      await set(uRef, userProfile);
+    } else {
+      userProfile = snap.val();
+      await update(uRef, { online: true, lastSeen: Date.now() });
+    }
+
+    onDisconnect(uRef).update({ online: false, lastSeen: Date.now() });
+
+    // Listen to own profile changes
+    onValue(uRef, (s) => {
+      if (!s.exists()) return;
+      userProfile = s.val();
+      document.getElementById("my-display-name").innerText = userProfile.name + (user.isAnonymous ? " [BETA]" : "");
+      document.getElementById("my-bio-preview").innerText = userProfile.bio || "";
+      document.getElementById("set-name").value = userProfile.name || "";
+      document.getElementById("set-bio").value = userProfile.bio || "";
+      const avBox = document.getElementById("my-avatar-box");
+      avBox.innerHTML = userProfile.photo ? `<img src="${userProfile.photo}" class="avatar">` : userProfile.name[0].toUpperCase();
+      if (userProfile.bg) {
+        document.getElementById("main-stage").style.background = userProfile.bg.startsWith("http")
+          ? `url('${userProfile.bg}') center/cover no-repeat` : userProfile.bg;
+      }
+    });
+
+    initDefaultRooms();
+    listenRooms();
+    listenFriendsAndUsers();
+    listenLeaderboard();
+    listenNotifications();
+    selectRoom("genel", "Genel Sohbet");
+    initCanvas();
+    initWatchParty();
+    initGames();
+  });
+
+  // ==================== ROOMS, DMS & ANNOUNCEMENTS ====================
+  async function initDefaultRooms() {
+    const rRef = ref(db, "rooms/genel");
+    const s = await get(rRef);
+    if (!s.exists()) {
+      await set(rRef, { name: "Genel Sohbet", announcement: "📢 Orixa'ya hoş geldin! Kurallara uy, oyunlarda zirveye çık." });
+      await set(ref(db, "rooms/oyun-lobisi"), { name: "Oyun Lobisi", announcement: "🎮 Rakip arayanlar buraya yazsın!" });
+    }
+  }
+
+  function listenRooms() {
+    onValue(ref(db, "rooms"), (snap) => {
+      const list = document.getElementById("rooms-list");
+      list.innerHTML = "";
+      snap.forEach(child => {
+        const id = child.key;
+        const val = child.val();
+        const btn = document.createElement("button");
+        btn.className = "item-row";
+        btn.innerHTML = `<div class="avatar" style="background:#232c3f;">#</div><div><strong>${val.name}</strong></div>`;
+        btn.onclick = () => { selectRoom(id, val.name); toggleSidebar(false); };
+        list.appendChild(btn);
+      });
+    });
+  }
+
+  window.createRoomPrompt = async () => {
+    const name = prompt("Yeni sohbet odası adı:");
+    if (!name) return;
+    const id = name.toLowerCase().replace(/[^a-z0-9]/g, "-") + "-" + Date.now().toString().slice(-3);
+    await set(ref(db, `rooms/${id}`), { name, announcement: `📢 ${name} odasına hoş geldiniz!` });
+  };
+
+  window.selectRoom = (roomId, roomName) => {
+    isDM = false;
+    currentChatMetaPath = `rooms/${roomId}`;
+    currentChatPath = `rooms/${roomId}/messages`;
+    document.getElementById("active-title").innerText = `# ${roomName}`;
+    document.getElementById("active-subtitle").innerText = "Herkese açık sohbet odası";
+    switchView("chat");
+    attachChatListener();
+  };
+
+  window.openDM = (otherUser) => {
+    isDM = true;
+    const pairId = [currentUser.uid, otherUser.uid].sort().join("_");
+    currentChatMetaPath = `dms/${pairId}`;
+    currentChatPath = `dms/${pairId}/messages`;
+    document.getElementById("active-title").innerText = otherUser.name;
+    const lastSeenStr = otherUser.online ? "🟢 Çevrimiçi" : `Son görülme: ${new Date(otherUser.lastSeen || Date.now()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+    document.getElementById("active-subtitle").innerText = `${otherUser.bio || ""} • ${lastSeenStr}`;
+    switchView("chat");
+    toggleSidebar(false);
+    attachChatListener();
+  };
+
+  window.editAnnouncement = async () => {
+    const text = prompt("Oda duyurusunu girin:");
+    if (text !== null) {
+      await update(ref(db, currentChatMetaPath), { announcement: "📢 " + text });
+    }
+  };
+
+  // ==================== CHAT ENGINE (100 MSG CAP, REPLY, EDIT, DELETE, REACTIONS, READ RECEIPTS) ====================
+  let chatUnsub = null;
+  let typingUnsub = null;
+  let annUnsub = null;
+
+  function attachChatListener() {
+    if (chatUnsub) chatUnsub();
+    if (typingUnsub) typingUnsub();
+    if (annUnsub) annUnsub();
+
+    annUnsub = onValue(ref(db, `${currentChatMetaPath}/announcement`), (s) => {
+      document.getElementById("announcement-text").innerText = s.val() || "📢 Orixa Sohbet";
+    });
+
+    typingUnsub = onValue(ref(db, `${currentChatMetaPath}/typing`), (s) => {
+      const val = s.val() || {};
+      const activeTypers = Object.entries(val)
+        .filter(([uid, data]) => uid !== currentUser.uid && Date.now() - data.ts < 3500)
+        .map(([, data]) => data.name);
+      document.getElementById("typing-bar").innerText = activeTypers.length ? `${activeTypers.join(", ")} yazıyor...` : "";
+    });
+
+    chatUnsub = onValue(ref(db, currentChatPath), (snap) => {
+      const area = document.getElementById("messages-area");
+      area.innerHTML = "";
+      const entries = [];
+      snap.forEach(c => entries.push({ key: c.key, ...c.val() }));
+
+      // Enforce 100-message cap
+      if (entries.length > 100) {
+        const overflow = entries.slice(0, entries.length - 100);
+        overflow.forEach(old => remove(ref(db, `${currentChatPath}/${old.key}`)));
+      }
+
+      entries.forEach(msg => {
+        // Mark as read by current user
+        if (msg.uid !== currentUser.uid && (!msg.readBy || !msg.readBy[currentUser.uid])) {
+          update(ref(db, `${currentChatPath}/${msg.key}/readBy`), { [currentUser.uid]: true });
+        }
+
+        const mine = msg.uid === currentUser.uid;
+        const card = document.createElement("div");
+        card.className = "msg-card" + (mine ? " mine" : "");
+
+        const readCount = msg.readBy ? Object.keys(msg.readBy).length : 0;
+        const ticksHtml = mine ? `<span class="read-ticks ${readCount > 0 ? 'seen' : ''}">${readCount > 0 ? '✓✓ Görüldü' : '✓ İletildi'}</span>` : "";
+
+        let reactionsHtml = "";
+        if (msg.reactions) {
+          Object.entries(msg.reactions).forEach(([emoji, usersObj]) => {
+            const count = Object.keys(usersObj || {}).length;
+            if (count > 0) {
+              reactionsHtml += `<button class="reaction-pill" onclick="toggleReaction('${msg.key}', '${emoji}')">${emoji} ${count}</button>`;
+            }
+          });
+        }
+
+        card.innerHTML = `
+          <div class="msg-meta">
+            <span class="msg-author">${msg.author || "Kullanıcı"}</span>
+            <span>${new Date(msg.ts || Date.now()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+            ${msg.edited ? "<span>(düzenlendi)</span>" : ""}
+            ${ticksHtml}
+          </div>
+          ${msg.replyTo ? `<div class="reply-quote">↩ <strong>${msg.replyTo.author}:</strong> ${msg.replyTo.text}</div>` : ""}
+          ${msg.text ? `<div class="msg-text">${escapeHtml(msg.text)}</div>` : ""}
+          ${msg.image ? `<img src="${msg.image}" class="msg-media" />` : ""}
+          ${msg.gif ? `<img src="${msg.gif}" class="msg-media" />` : ""}
+          ${msg.audio ? `<audio controls src="${msg.audio}" style="margin-top:6px; max-width:230px;"></audio>` : ""}
+          <div class="msg-actions">
+            ${reactionsHtml}
+            <button class="act-chip" onclick="toggleReaction('${msg.key}', '❤️')">❤️</button>
+            <button class="act-chip" onclick="toggleReaction('${msg.key}', '😂')">😂</button>
+            <button class="act-chip" onclick="toggleReaction('${msg.key}', '🔥')">🔥</button>
+            <button class="act-chip" onclick="setReply('${msg.key}', '${escapeHtml(msg.author)}', '${escapeHtml(msg.text || '[Medya]')}')">Yanıtla</button>
+            ${mine && msg.text ? `<button class="act-chip" onclick="editMessage('${msg.key}', '${escapeHtml(msg.text)}')">Düzenle</button>` : ""}
+            ${mine ? `<button class="act-chip" style="color:var(--danger);" onclick="deleteMessage('${msg.key}')">Sil</button>` : ""}
+          </div>
+        `;
+        area.appendChild(card);
+      });
+      area.scrollTop = area.scrollHeight;
+    });
+  }
+
+  window.handleTyping = () => {
+    set(ref(db, `${currentChatMetaPath}/typing/${currentUser.uid}`), {
+      name: userProfile.name,
+      ts: Date.now()
+    });
+  };
+
+  window.sendChatMessage = async () => {
+    const input = document.getElementById("chat-input");
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    await sendSpecialMessage({ text });
+  };
+
+  async function sendSpecialMessage(payload) {
+    const msgData = {
+      uid: currentUser.uid,
+      author: userProfile.name,
+      ts: Date.now(),
+      ...payload
+    };
+    if (replyContext) {
+      msgData.replyTo = replyContext;
+      cancelReply();
+    }
+    await push(ref(db, currentChatPath), msgData);
+    remove(ref(db, `${currentChatMetaPath}/typing/${currentUser.uid}`));
+  }
+
+  window.setReply = (key, author, text) => {
+    replyContext = { key, author, text: text.slice(0, 60) };
+    document.getElementById("reply-preview-text").innerText = `↩ ${author}: ${replyContext.text}`;
+    document.getElementById("reply-preview-bar").style.display = "flex";
+  };
+
+  window.cancelReply = () => {
+    replyContext = null;
+    document.getElementById("reply-preview-bar").style.display = "none";
+  };
+
+  window.toggleReaction = async (msgKey, emoji) => {
+    const rRef = ref(db, `${currentChatPath}/${msgKey}/reactions/${emoji}/${currentUser.uid}`);
+    const snap = await get(rRef);
+    if (snap.exists()) await remove(rRef);
+    else await set(rRef, true);
+  };
+
+  window.editMessage = async (msgKey, oldText) => {
+    const next = prompt("Mesajı düzenle:", oldText);
+    if (next && next.trim()) {
+      await update(ref(db, `${currentChatPath}/${msgKey}`), { text: next.trim(), edited: true });
+    }
+  };
+
+  window.deleteMessage = async (msgKey) => {
+    if (confirm("Mesaj silinsin mi?")) {
+      await remove(ref(db, `${currentChatPath}/${msgKey}`));
+    }
+  };
+
+  window.toggleGifDrawer = () => {
+    const d = document.getElementById("gif-drawer");
+    d.style.display = d.style.display === "block" ? "none" : "block";
+  };
+
+  window.sendPhotoMessage = async (input) => {
+    const file = input.files[0];
+    if (!file) return;
+    const fileRef = sRef(storage, `orixa/chat/${Date.now()}_${file.name}`);
+    await uploadBytes(fileRef, file);
+    const url = await getDownloadURL(fileRef);
+    await sendSpecialMessage({ image: url });
+    input.value = "";
+  };
+
+  window.toggleVoiceRecord = async () => {
+    const btn = document.getElementById("voice-rec-btn");
+    if (!mediaRecorder || mediaRecorder.state === "inactive") {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(audioChunks, { type: "audio/webm" });
+          const fileRef = sRef(storage, `orixa/voice/${Date.now()}.webm`);
+          await uploadBytes(fileRef, blob);
+          const url = await getDownloadURL(fileRef);
+          await sendSpecialMessage({ audio: url });
+          stream.getTracks().forEach(t => t.stop());
+        };
+        mediaRecorder.start();
+        btn.classList.add("recording");
+      } catch (e) { alert("Mikrofon izni gerekli: " + e.message); }
+    } else {
+      mediaRecorder.stop();
+      btn.classList.remove("recording");
+    }
+  };
+
+  // ==================== FRIENDS, NOTIFICATIONS & LEADERBOARD ====================
+  function listenFriendsAndUsers() {
+    onValue(ref(db, "users"), (snap) => {
+      const fList = document.getElementById("friends-list");
+      fList.innerHTML = "";
+      snap.forEach(c => {
+        const u = c.val();
+        if (u.uid === currentUser.uid) return;
+        const btn = document.createElement("button");
+        btn.className = "item-row";
+        btn.innerHTML = `
+          <div class="avatar">${u.photo ? `<img src="${u.photo}" class="avatar">` : u.name[0].toUpperCase()}
+            <span class="status-dot ${u.online ? 'online' : ''}"></span>
+          </div>
+          <div style="min-width:0; flex:1;">
+            <div style="font-size:13px; font-weight:600;">${u.name}</div>
+            <div style="font-size:11px; color:var(--text-muted);">${u.online ? 'Çevrimiçi' : 'Çevrimdışı'}</div>
+          </div>
+        `;
+        btn.onclick = () => openDM(u);
+        fList.appendChild(btn);
+      });
+    });
+
+    onValue(ref(db, `friendRequests/${currentUser.uid}`), (snap) => {
+      const reqList = document.getElementById("friend-requests-list");
+      reqList.innerHTML = "";
+      snap.forEach(c => {
+        const req = c.val();
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--bg-card); padding:8px 12px; border-radius:10px;";
+        row.innerHTML = `<span>${req.fromName}</span><button class="btn-primary" style="padding:5px 10px; font-size:12px;" onclick="acceptFriend('${c.key}', '${req.fromName}')">Kabul Et</button>`;
+        reqList.appendChild(row);
+      });
+    });
+  }
+
+  window.sendFriendRequest = async () => {
+    const targetName = document.getElementById("friend-search-input").value.trim().toLowerCase();
+    if (!targetName) return;
+    const snap = await get(ref(db, "users"));
+    let found = null;
+    snap.forEach(c => {
+      if ((c.val().name || "").toLowerCase() === targetName && c.key !== currentUser.uid) found = c.val();
+    });
+    if (!found) return alert("Kullanıcı bulunamadı!");
+    await set(ref(db, `friendRequests/${found.uid}/${currentUser.uid}`), { fromName: userProfile.name });
+    await push(ref(db, `notifications/${found.uid}`), { text: `👋 ${userProfile.name} sana arkadaşlık isteği gönderdi!`, ts: Date.now() });
+    alert("Arkadaşlık isteği gönderildi!");
+  };
+
+  window.acceptFriend = async (fromUid, fromName) => {
+    await set(ref(db, `friends/${currentUser.uid}/${fromUid}`), true);
+    await set(ref(db, `friends/${fromUid}/${currentUser.uid}`), true);
+    await remove(ref(db, `friendRequests/${currentUser.uid}/${fromUid}`));
+    await push(ref(db, `notifications/${fromUid}`), { text: `✅ ${userProfile.name} arkadaşlık isteğini kabul etti!`, ts: Date.now() });
+  };
+
+  function listenNotifications() {
+    onValue(ref(db, `notifications/${currentUser.uid}`), (snap) => {
+      const box = document.getElementById("notifications-list");
+      box.innerHTML = "";
+      const count = snap.size;
+      document.getElementById("notif-dot").style.display = count > 0 ? "block" : "none";
+      if (!count) box.innerHTML = "<p style='color:var(--text-muted)'>Yeni bildirim yok.</p>";
+      snap.forEach(c => {
+        const div = document.createElement("div");
+        div.style.cssText = "background:var(--bg-card); padding:10px; border-radius:10px;";
+        div.innerText = c.val().text;
+        box.appendChild(div);
+      });
+    });
+  }
+
+  window.clearNotifications = () => remove(ref(db, `notifications/${currentUser.uid}`));
+
+  function listenLeaderboard() {
+    onValue(ref(db, "users"), (snap) => {
+      const arr = [];
+      snap.forEach(c => arr.push(c.val()));
+      arr.sort((a, b) => (b.score || 0) - (a.score || 0));
+      const box = document.getElementById("leaderboard-list");
+      box.innerHTML = "";
+      arr.slice(0, 5).forEach((u, i) => {
+        const div = document.createElement("div");
+        div.style.cssText = "display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,0.03); border-radius:8px; font-size:12px;";
+        div.innerHTML = `<span>${i + 1}. ${u.name}</span><strong style="color:var(--warning);">${u.score || 0} P</strong>`;
+        box.appendChild(div);
+      });
+    });
+  }
+
+  async function awardPoints(pts) {
+    await runTransaction(ref(db, `users/${currentUser.uid}/score`), (cur) => (cur || 0) + pts);
+  }
+
+  // ==================== 5 LIVE MULTIPLAYER GAMES ====================
+  const WORDS = ["ORIXA", "GALAXY", "YAZILIM", "OYUNCU", "EFSANE", "KAPTAN", "ROKET"];
+
+  function initGames() {
+    onValue(ref(db, `games/${activeGame}`), (snap) => {
+      renderGameArena(snap.val());
+    });
+  }
+
+  window.selectGame = (gameId, btn) => {
+    activeGame = gameId;
+    document.querySelectorAll(".game-card-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    initGames();
+  };
+
+  window.resetCurrentGame = async () => {
+    if (activeGame === "xox") {
+      await set(ref(db, "games/xox"), { board: ["","","","","","","","",""], turn: "X", winner: "" });
+    } else if (activeGame === "rps") {
+      await set(ref(db, "games/rps"), { moves: {}, result: "Seçiminizi yapın!" });
+    } else if (activeGame === "battleship") {
+      const ship = Math.floor(Math.random() * 25);
+      await set(ref(db, "games/battleship"), { ship, hits: Array(25).fill(""), winner: "" });
+    } else if (activeGame === "reflex") {
+      await set(ref(db, "games/reflex"), { ready: false, winner: "", startTime: 0 });
+      setTimeout(() => {
+        update(ref(db, "games/reflex"), { ready: true, startTime: Date.now() });
+      }, 2000 + Math.random() * 2500);
+    } else if (activeGame === "word") {
+      const w = WORDS[Math.floor(Math.random() * WORDS.length)];
+      await set(ref(db, "games/word"), { word: w, guessed: [], winner: "" });
+    }
+  };
+
+  function renderGameArena(state) {
+    const arena = document.getElementById("game-arena");
+    if (!state) { resetCurrentGame(); return; }
+
+    // 1. XOX
+    if (activeGame === "xox") {
+      const board = state.board || ["","","","","","","","",""];
+      arena.innerHTML = `
+        <h4>❌⭕ Canlı XOX — Sıra: <span style="color:var(--accent-2)">${state.turn || "X"}</span></h4>
+        ${state.winner ? `<div style="color:var(--success); font-weight:800;">🏆 Kazanan: ${state.winner}</div>` : ""}
+        <div class="xox-grid">
+          ${board.map((cell, idx) => `<button class="xox-cell" onclick="playXOX(${idx})">${cell}</button>`).join("")}
+        </div>
+      `;
+    }
+    // 2. ROCK PAPER SCISSORS
+    else if (activeGame === "rps") {
+      const moves = state.moves || {};
+      const entries = Object.entries(moves);
+      arena.innerHTML = `
+        <h4>✊✋✌️ Canlı Taş Kağıt Makas</h4>
+        <div style="display:flex; gap:12px;">
+          <button class="btn-primary" style="font-size:24px;" onclick="playRPS('✊')">✊</button>
+          <button class="btn-primary" style="font-size:24px;" onclick="playRPS('✋')">✋</button>
+          <button class="btn-primary" style="font-size:24px;" onclick="playRPS('✌️')">✌️</button>
+        </div>
+        <div style="font-size:13px; color:var(--text-muted);">
+          ${entries.length < 2 ? `Oyuncu bekleniyor (${entries.length}/2)...` : entries.map(([,v]) => `<strong>${v.name}:</strong> ${v.choice}`).join(" vs ")}
+        </div>
+      `;
+    }
+    // 3. MINI BATTLESHIP
+    else if (activeGame === "battleship") {
+      const hits = state.hits || Array(25).fill("");
+      arena.innerHTML = `
+        <h4>🚢💥 Mini Amiral Battı (Gizli Gemiyi İlk Vuran +25 Puan Kazanır!)</h4>
+        ${state.winner ? `<div style="color:var(--success); font-weight:800;">🎉 Gemiyi Batıran: ${state.winner}</div>` : ""}
+        <div class="bs-grid">
+          ${hits.map((h, i) => `<button class="bs-cell" onclick="playBattleship(${i})">${h}</button>`).join("")}
+        </div>
+      `;
+    }
+    // 4. REFLEX DUEL
+    else if (activeGame === "reflex") {
+      arena.innerHTML = `
+        <h4>⚡🎯 Hızlı Refleks Düellosu</h4>
+        <p style="font-size:13px; color:var(--text-muted);">Buton YEŞİL olduğu an ilk tıklayan kazanır!</p>
+        <button onclick="playReflex()" style="width:200px; height:90px; border-radius:18px; font-size:20px; color:#fff; background:${state.ready ? 'var(--success)' : 'var(--danger)'}">
+          ${state.winner ? "🏆 " + state.winner : (state.ready ? "ŞİMDİ TIKLA!" : "BEKLE...")}
+        </button>
+      `;
+    }
+    // 5. WORD GUESS
+    else if (activeGame === "word") {
+      const word = state.word || "ORIXA";
+      const guessed = state.guessed || [];
+      const masked = word.split("").map(ch => guessed.includes(ch) ? ch : "_").join(" ");
+      arena.innerHTML = `
+        <h4>🔤🧠 Canlı Kelime Tahmin</h4>
+        <div style="font-size:30px; letter-spacing:8px; font-weight:800; color:var(--accent-2);">${masked}</div>
+        ${state.winner ? `<div style="color:var(--success); font-weight:800;">🏆 Son Harfi Bulan: ${state.winner}</div>` : ""}
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="word-letter-input" maxlength="1" style="width:60px; text-align:center; text-transform:uppercase;" placeholder="A" />
+          <button class="btn-primary" onclick="playWordGuess()">Harf Tahmin Et</button>
+        </div>
+      `;
+    }
+  }
+
+  window.playXOX = async (idx) => {
+    const snap = await get(ref(db, "games/xox"));
+    const st = snap.val();
+    if (!st || st.winner || st.board[idx]) return;
+    const board = [...st.board];
+    board[idx] = st.turn;
+    const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    let winner = "";
+    for (const [a,b,c] of wins) {
+      if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+        winner = `${userProfile.name} (${board[a]})`;
+        await awardPoints(25);
+      }
+    }
+    await set(ref(db, "games/xox"), { board, turn: st.turn === "X" ? "O" : "X", winner });
+  };
+
+  window.playRPS = async (choice) => {
+    await set(ref(db, `games/rps/moves/${currentUser.uid}`), { name: userProfile.name, choice });
+    await awardPoints(5);
+  };
+
+  window.playBattleship = async (idx) => {
+    const snap = await get(ref(db, "games/battleship"));
+    const st = snap.val();
+    if (!st || st.winner || st.hits[idx]) return;
+    const hits = [...st.hits];
+    let winner = "";
+    if (idx === st.ship) {
+      hits[idx] = "💥";
+      winner = userProfile.name;
+      await awardPoints(25);
+    } else {
+      hits[idx] = "🌊";
+    }
+    await update(ref(db, "games/battleship"), { hits, winner });
+  };
+
+  window.playReflex = async () => {
+    const snap = await get(ref(db, "games/reflex"));
+    const st = snap.val();
+    if (!st || !st.ready || st.winner) return;
+    await update(ref(db, "games/reflex"), { winner: userProfile.name, ready: false });
+    await awardPoints(25);
+  };
+
+  window.playWordGuess = async () => {
+    const inp = document.getElementById("word-letter-input");
+    const letter = (inp.value || "").toUpperCase().trim();
+    if (!letter) return;
+    const snap = await get(ref(db, "games/word"));
+    const st = snap.val();
+    if (!st || st.winner) return;
+    const guessed = Array.from(new Set([...(st.guessed || []), letter]));
+    const solved = st.word.split("").every(ch => guessed.includes(ch));
+    let winner = "";
+    if (solved) { winner = userProfile.name; await awardPoints(25); }
+    await update(ref(db, "games/word"), { guessed, winner });
+  };
+
+  // ==================== SHARED DRAWING BOARD ====================
+  let drawing = false;
+  let lastPos = null;
+  let isEraser = false;
+
+  window.setEraser = () => { isEraser = !isEraser; };
+  window.clearSharedCanvas = () => remove(ref(db, "canvas/strokes"));
+
+  function initCanvas() {
+    const canvas = document.getElementById("shared-canvas");
+    const ctx = canvas.getContext("2d");
+
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+      }
+    }
+    window.addEventListener("resize", resize);
+    setTimeout(resize, 300);
+
+    const getCoords = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: (clientX - rect.left) / rect.width, y: (clientY - rect.top) / rect.height };
+    };
+
+    const start = (e) => { drawing = true; lastPos = getCoords(e); };
+    const end = () => { drawing = false; lastPos = null; };
+    const move = (e) => {
+      if (!drawing || !lastPos) return;
+      e.preventDefault();
+      const pos = getCoords(e);
+      const color = isEraser ? "#ffffff" : document.getElementById("brush-color").value;
+      const size = Number(document.getElementById("brush-size").value);
+      push(ref(db, "canvas/strokes"), { x1: lastPos.x, y1: lastPos.y, x2: pos.x, y2: pos.y, color, size });
+      lastPos = pos;
+    };
+
+    canvas.addEventListener("mousedown", start);
+    canvas.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", end);
+    canvas.addEventListener("touchstart", start, { passive: false });
+    canvas.addEventListener("touchmove", move, { passive: false });
+    window.addEventListener("touchend", end);
+
+    onValue(ref(db, "canvas/strokes"), (snap) => {
+      resize();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      snap.forEach(c => {
+        const s = c.val();
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = s.size;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(s.x1 * canvas.width, s.y1 * canvas.height);
+        ctx.lineTo(s.x2 * canvas.width, s.y2 * canvas.height);
+        ctx.stroke();
+      });
+    });
+  }
+
+  // ==================== SYNCHRONIZED WATCH PARTY ====================
+  function extractYouTubeId(url) {
+    const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+
+  window.loadWatchVideo = async () => {
+    const url = document.getElementById("watch-url-input").value.trim();
+    const vid = extractYouTubeId(url);
+    if (!vid) return alert("Geçerli bir YouTube linki girin!");
+    await set(ref(db, "watchParty/state"), { videoId: vid, syncedAt: Date.now(), by: userProfile.name });
+  };
+
+  window.syncWatchParty = async () => {
+    const snap = await get(ref(db, "watchParty/state"));
+    if (!snap.exists()) return;
+    await update(ref(db, "watchParty/state"), { syncedAt: Date.now(), by: userProfile.name });
+  };
+
+  window.sendWatchMsg = async () => {
+    const inp = document.getElementById("watch-chat-input");
+    if (!inp.value.trim()) return;
+    await push(ref(db, "watchParty/messages"), { author: userProfile.name, text: inp.value.trim(), ts: Date.now() });
+    inp.value = "";
+  };
+
+  function initWatchParty() {
+    onValue(ref(db, "watchParty/state"), (snap) => {
+      const st = snap.val();
+      if (!st || !st.videoId) return;
+      const iframe = document.getElementById("watch-iframe");
+      iframe.src = `https://www.youtube.com/embed/${st.videoId}?autoplay=1&rel=0&sync=${st.syncedAt}`;
+      document.getElementById("watch-status").innerText = `🔄 ${st.by} tarafından senkronize edildi (${new Date(st.syncedAt).toLocaleTimeString()})`;
+    });
+
+    onValue(ref(db, "watchParty/messages"), (snap) => {
+      const box = document.getElementById("watch-messages");
+      box.innerHTML = "";
+      snap.forEach(c => {
+        const m = c.val();
+        const div = document.createElement("div");
+        div.className = "msg-card";
+        div.style.maxWidth = "95%";
+        div.innerHTML = `<div class="msg-meta"><span class="msg-author">${m.author}</span></div><div class="msg-text">${escapeHtml(m.text)}</div>`;
+        box.appendChild(div);
+      });
+      box.scrollTop = box.scrollHeight;
+    });
+  }
+
+  // ==================== VOICE & VIDEO ROOMS (WEBRTC SIGNALING) ====================
+  window.joinAVRoom = async () => {
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      document.getElementById("join-av-btn").style.display = "none";
+      document.getElementById("toggle-mic-btn").style.display = "inline-flex";
+      document.getElementById("toggle-cam-btn").style.display = "inline-flex";
+      document.getElementById("leave-av-btn").style.display = "inline-flex";
+
+      const grid = document.getElementById("av-grid");
+      grid.innerHTML = "";
+      addVideoTile(currentUser.uid, userProfile.name + " (Sen)", localStream, true);
+
+      const memberRef = ref(db, `calls/main/members/${currentUser.uid}`);
+      await set(memberRef, { name: userProfile.name, joinedAt: Date.now() });
+      onDisconnect(memberRef).remove();
+
+      onValue(ref(db, "calls/main/members"), (snap) => {
+        snap.forEach(c => {
+          const uid = c.key;
+          if (uid !== currentUser.uid && !peers[uid]) {
+            startPeerConnection(uid, c.val().name, true);
+          }
+        });
+      });
+
+      onValue(ref(db, `calls/main/signals/${currentUser.uid}`), async (snap) => {
+        snap.forEach(async (c) => {
+          const sig = c.val();
+          await remove(c.ref);
+          if (!peers[sig.from]) await startPeerConnection(sig.from, sig.fromName || "Kullanıcı", false);
+          const pc = peers[sig.from];
+          if (sig.sdp) {
+            await pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
+            if (sig.sdp.type === "offer") {
+              const ans = await pc.createAnswer();
+              await pc.setLocalDescription(ans);
+              await push(ref(db, `calls/main/signals/${sig.from}`), { from: currentUser.uid, fromName: userProfile.name, sdp: ans });
+            }
+          } else if (sig.candidate) {
+            await pc.addIceCandidate(new RTCIceCandidate(sig.candidate));
+          }
+        });
+      });
+    } catch (e) { alert("Kamera/Mikrofon erişimi açılamadı: " + e.message); }
+  };
+
+  async function startPeerConnection(remoteUid, remoteName, initiator) {
+    const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+    peers[remoteUid] = pc;
+    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+    pc.onicecandidate = (e) => {
+      if (e.candidate) {
+        push(ref(db, `calls/main/signals/${remoteUid}`), { from: currentUser.uid, candidate: e.candidate.toJSON() });
+      }
+    };
+    pc.ontrack = (e) => {
+      addVideoTile(remoteUid, remoteName, e.streams[0], false);
+    };
+
+    if (initiator) {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await push(ref(db, `calls/main/signals/${remoteUid}`), { from: currentUser.uid, fromName: userProfile.name, sdp: offer });
+    }
+  }
+
+  function addVideoTile(uid, label, stream, muted) {
+    if (document.getElementById("tile-" + uid)) return;
+    const tile = document.createElement("div");
+    tile.className = "av-tile";
+    tile.id = "tile-" + uid;
+    const video = document.createElement("video");
+    video.srcObject = stream;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = muted;
+    tile.appendChild(video);
+    const tag = document.createElement("div");
+    tag.className = "av-label";
+    tag.innerText = label;
+    tile.appendChild(tag);
+    document.getElementById("av-grid").appendChild(tile);
+  }
+
+  window.toggleMic = () => {
+    const track = localStream.getAudioTracks()[0];
+    track.enabled = !track.enabled;
+    document.getElementById("toggle-mic-btn").innerText = track.enabled ? "🎤 Mikrofon Açık" : "🔇 Mikrofon Kapalı";
+  };
+
+  window.toggleCam = () => {
+    const track = localStream.getVideoTracks()[0];
+    track.enabled = !track.enabled;
+    document.getElementById("toggle-cam-btn").innerText = track.enabled ? "📹 Kamera Açık" : "🚫 Kamera Kapalı";
+  };
+
+  window.leaveAVRoom = async () => {
+    if (localStream) localStream.getTracks().forEach(t => t.stop());
+    Object.values(peers).forEach(pc => pc.close());
+    peers = {};
+    await remove(ref(db, `calls/main/members/${currentUser.uid}`));
+    document.getElementById("av-grid").innerHTML = "";
+    document.getElementById("join-av-btn").style.display = "inline-flex";
+    document.getElementById("toggle-mic-btn").style.display = "none";
+    document.getElementById("toggle-cam-btn").style.display = "none";
+    document.getElementById("leave-av-btn").style.display = "none";
+  };
+
+  // ==================== SETTINGS & UI HELPERS ====================
+  window.saveProfileSettings = async () => {
+    const updates = {
+      name: document.getElementById("set-name").value.trim() || userProfile.name,
+      bio: document.getElementById("set-bio").value.trim(),
+      bg: document.getElementById("set-bg-preset").value
+    };
+
+    const photoFile = document.getElementById("set-photo-file").files[0];
+    if (photoFile) {
+      const pRef = sRef(storage, `orixa/avatars/${currentUser.uid}_${Date.now()}`);
+      await uploadBytes(pRef, photoFile);
+      updates.photo = await getDownloadURL(pRef);
+    }
+
+    const bgFile = document.getElementById("set-bg-file").files[0];
+    if (bgFile) {
+      const bRef = sRef(storage, `orixa/bg/${currentUser.uid}_${Date.now()}`);
+      await uploadBytes(bRef, bgFile);
+      updates.bg = await getDownloadURL(bRef);
+    }
+
+    await update(ref(db, `users/${currentUser.uid}`), updates);
+    closeModal("settings-modal");
+  };
+
+  window.switchView = (viewName, btn) => {
+    document.querySelectorAll(".view-section").forEach(v => v.classList.remove("active"));
+    document.getElementById(`view-${viewName}`).classList.add("active");
+    if (btn) {
+      document.querySelectorAll(".rail-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    }
+  };
+
+  window.toggleSidebar = (force) => {
+    const sb = document.getElementById("sidebar");
+    if (typeof force === "boolean") sb.classList.toggle("open", force);
+    else sb.classList.toggle("open");
+  };
+
+  window.openModal = (id) => { document.getElementById(id).style.display = "flex"; };
+  window.closeModal = (id) => { document.getElementById(id).style.display = "none"; };
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+  }
+</script>
+</body>
+</html>
